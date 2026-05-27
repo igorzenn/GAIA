@@ -72,3 +72,26 @@ def build_schedule_datetimes(data: dict) -> dict:
         "start_datetime": start_datetime.isoformat(),
         "end_datetime": end_datetime.isoformat() 
     }
+
+def build_calendar_event_payload(data: dict) -> dict: # formatação que o microsoft graph espera receber'
+    return {
+        "subject": data.get("title"),
+        "start": {
+            "dateTime": data.get("start_datetime"),
+            "timeZone": settings.timezone
+        },
+        "end": {
+            "dateTime": data.get("end_datetime"),
+            "timeZone": settings.timezone
+        },
+        "body": {
+            "contentType": "HTML",
+            "content": ""
+        },
+        "location": {
+            "displayName": ""
+        },
+        "attendees": [],
+        "isOnlineMeeting": True,
+        "onlineMeetingProvider": "teamsForBusiness"
+    }

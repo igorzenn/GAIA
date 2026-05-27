@@ -1,6 +1,7 @@
 from app.schemas import AgentResult
 from app.services.schedule_parser import parser_schedule_message
-from app.services.schedule_service import (validate_schedule_date, build_schedule_datetimes)
+from app.services.schedule_service import (validate_schedule_date, build_schedule_datetimes, build_calendar_event_payload)
+from app.services.graph_service import simulate_create_calendar_event
 
 
 def handle_schedule(message: str, intent: str) -> AgentResult:
@@ -16,10 +17,16 @@ def handle_schedule(message: str, intent: str) -> AgentResult:
         return validation_error      # Se faltar algo obrigatorio, pare o fluxo retorne uma resposta pedindo a informação faltante
     
     schedule_data = build_schedule_datetimes(schedule_data)
+    if intent == "calendar_create":
+        event_payload = build_calendar_event_payload(schedule_data)
+        schedule_data["event_payload"] = event_payload
+
+        graph_result = simulate_create_calendar_event(event_payload)
+        schedule_data["graph_result"] = graph_result
 
     if intent == "calendar_create":
-        response = ("Entendi que você quer criar um compromisso na agenda. "
-            "Ainda não estou consultando o Microsoft Graph.")
+        response = ("Evento validado e simulado com sucesso. "
+        "Ainda não estou criando no Microsoft Graph real.")
         
     elif intent == "calendar_query":
         response = (
