@@ -5,6 +5,7 @@ class GaiaRequest(BaseModel): # Classe de requisição, gaiarequest herda de bas
     mensagem_usuario: str = Field(..., min_lenght=1) # Define que a essa opção so pode ser uma string, (...) obrigatoriamente preenchida e (min_lenght) mostra que tem q ter no min um caracter
     sessionId: str = Field(..., min_lenght=1)
     executionMode: str | None = "production" # Caso executionmode não venha será definido como production
+    access_token: str | None = None
 
 class GaiaResponse(BaseModel): # Como o cod vai mandar os dados pro N8N 
     agent: str

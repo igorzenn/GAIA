@@ -30,7 +30,7 @@ def process_message(payload: GaiaRequest): # O corpo da requisição precisa seg
         agent = router_result.agent
 
         if agent == "ScheduleAgent":
-            agent_result = handle_schedule(message=payload.mensagem_usuario, intent=router_result.intent) # payload.mensagem_usuario pega a mensagem enviada pelo usuário e passa para o agente escolhidoe 
+            agent_result = handle_schedule(message=payload.mensagem_usuario, intent=router_result.intent, access_token=payload.access_token) # payload.mensagem_usuario pega a mensagem enviada pelo usuário e passa para o agente escolhidoe 
 
         elif agent == "ExchangeAgent":
             agent_result = handle_exchange(message=payload.mensagem_usuario, intent=router_result.intent)

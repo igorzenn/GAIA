@@ -13,7 +13,19 @@ class Settings(BaseModel):
     exchange_api_base_url: str = os.getenv("EXCHANGE_API_BASE_URL", "https://v6.exchangerate-api.com/v6")
     microsoft_graph_base_url: str = os.getenv(
     "MICROSOFT_GRAPH_BASE_URL",
-    "https://graph.microsoft.com/v1.0"
-)
+    "https://graph.microsoft.com/v1.0")
+    microsoft_tenant_id: str | None = os.getenv("MICROSOFT_TENANT_ID")
+    microsoft_client_id: str | None = os.getenv("MICROSOFT_CLIENT_ID")
+    microsoft_client_secret: str | None = os.getenv("MICROSOFT_CLIENT_SECRET")
+
+    microsoft_graph_base_url: str = os.getenv(
+        "MICROSOFT_GRAPH_BASE_URL",
+        "https://graph.microsoft.com/v1.0"
+    )
+
+    microsoft_default_user_email: str | None = os.getenv(
+        "MICROSOFT_DEFAULT_USER_EMAIL" 
+    )
+
 
 settings = Settings()

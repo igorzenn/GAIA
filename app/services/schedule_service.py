@@ -95,3 +95,19 @@ def build_calendar_event_payload(data: dict) -> dict: # formatação que o micro
         "isOnlineMeeting": True,
         "onlineMeetingProvider": "teamsForBusiness"
     }
+
+def normalize_schedule_create_response(data: dict) -> dict:
+    graph_result = data.get("graph_result") or {}
+
+    return {
+        "title": data.get("title"),
+        "start_datetime": data.get("start_datetime"),
+        "end_datetime": data.get("end_datetime"),
+        "event_id": graph_result.get("id"),
+        "webLink": graph_result.get("webLink"),
+        "joinUrl": graph_result.get("joinUrl"),
+        "organizer": graph_result.get("organizer"),
+        "attendees": graph_result.get("attendees"),
+        "isOnlineMeeting": graph_result.get("isOnlineMeeting"),
+        "onlineMeetingProvider": graph_result.get("onlineMeetingProvider")
+    }
