@@ -1,6 +1,7 @@
 from app.schemas import AgentResult
 from app.services.schedule_parser import parser_schedule_message
-from app.services.schedule_service import (validate_schedule_date, build_schedule_datetimes, build_calendar_event_payload, normalize_schedule_create_response)
+from app.services.schedule_service import (validate_schedule_date, build_schedule_datetimes, build_calendar_event_payload, normalize_schedule_create_response, 
+                                           build_schedule_create_response)
 from app.services.graph_service import create_calendar_event_delegated
 
 
@@ -26,7 +27,7 @@ def handle_schedule(message: str, intent: str, access_token: str | None = None) 
 
         schedule_data = normalize_schedule_create_response(schedule_data)
         
-        response = ("Evento criado com sucesso no Microsoft Graph.")
+        response = build_schedule_create_response(schedule_data)
         
     elif intent == "calendar_query":
         response = (

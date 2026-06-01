@@ -96,7 +96,7 @@ def build_calendar_event_payload(data: dict) -> dict: # formatação que o micro
         "onlineMeetingProvider": "teamsForBusiness"
     }
 
-def normalize_schedule_create_response(data: dict) -> dict:
+def normalize_schedule_create_response(data: dict) -> dict: # O que gostariamos que viesse na resposta
     graph_result = data.get("graph_result") or {}
 
     return {
@@ -110,4 +110,76 @@ def normalize_schedule_create_response(data: dict) -> dict:
         "attendees": graph_result.get("attendees"),
         "isOnlineMeeting": graph_result.get("isOnlineMeeting"),
         "onlineMeetingProvider": graph_result.get("onlineMeetingProvider")
+    }
+
+def build_schedule_create_response(data: dict) -> str: # formatação da resposta do schedule para o usuário
+    title = data.get("title")
+    start_datetime = data.get("start_datetime")
+    end_datetime = data.get("end_datetime")
+    join_url = data.get("joinUrl")
+
+    datetime_text = format_schedule_datetime_range(
+        start_datetime=start_datetime,
+        end_datetime=end_datetime
+    )
+
+    response = (
+        f'Evento "{title}" criado com sucesso '
+    )
+
+    if datetime_text:
+        response += f"para {datetime_text}"
+
+    response += "."
+
+    if join_url: 
+        response += f" Link da reunião: {join_url}"
+
+    return response
+
+def format_schedule_datetime_range(   # formatar hora da resposta
+        start_datetime: str | None,
+        end_datetime: str | None
+) -> str:
+    if not start_datetime or not end_datetime:
+        return ""
+    
+    start = datetime.fromisoformat(start_datetime)
+    end = datetime.fromisoformat(end_datetime)
+
+    date_text = start.strftime("%d/%m/%Y")
+    start_time_text = start.strftime("%H:%M")
+    end_time_text = end.strftime("%H:%M")
+
+    return f"{date_text}, das {start_time_text} as {end_time_text}" 
+
+def build_calendar_query_range(data: dict) -> dict: # transforma o pedido do usuário de hoje para o real dia atual 
+    date_reference = data.get("date_reference")
+
+    if not date_reference:
+        return data
+
+    now = datetime.now(ZoneInfo(settings.timezone))
+
+    if date_reference == "hoje":
+        query_date = now.date()
+
+    elif date_reference == "amanha":
+        query_date = (now + timedelta(days=1)).date()
+
+    else:
+        return data
+
+    start_datetime = datetime.fromisoformat(
+        f"{query_date}T00:00:00"
+    ).replace(tzinfo=ZoneInfo(settings.timezone))
+
+    end_datetime = datetime.fromisoformat(
+        f"{query_date}T23:59:59"
+    ).replace(tzinfo=ZoneInfo(settings.timezone))
+
+    return {
+        **data,
+        "query_start_datetime": start_datetime.isoformat(),
+        "query_end_datetime": end_datetime.isoformat()
     }
