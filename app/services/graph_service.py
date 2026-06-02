@@ -64,35 +64,59 @@ def create_calendar_event_delegated(payload: dict) -> dict:
 
     return normalize_calendar_event_response(graph_result)
 
-def normalize_calendar_event_response(graph_result: dict) -> dict:
-    online_meeting = graph_result.get("online_meeting") or {}
-    organizer = graph_result.get("organizer") or {}
-    organizer_email = organizer.get("emailAddress") or {}
+def normalize_calendar_event_response(graph_result: dict) -> list[dict]:
+    events = []
 
-    attendees = []
+    for event in graph_result.get("value", []):
+        online_meeting = graph_result.get("online_meeting") or {}
+        organizer = graph_result.get("organizer") or {}
+        organizer_email = organizer.get("emailAddress") or {}
 
-    for attendee in graph_result.get("attendees", []):
-        email_address = attendee.get("emailAddress") or {}
+    
 
-        attendees.append({
-            "name": email_address.get("name"),
-            "address": email_address.get("address"),
-            "type": attendee.get("type"),
-            "status": attendee.get("status")
+        events.append({
+            "id": event.get("id"),
+            "subject": event.get("subject"),
+            "start": event.get("start"),
+            "end": event.get("end"),
+            "location": event.get("location"),
+            "webLink": event.get("webLink"),
+            "joinUrl": online_meeting.get("joinUrl"),
+            "organizer": {
+                "name": organizer_email.get("name"),
+                "address": organizer_email.get("address")
+            },
+            "isOnlineMeeting": event.get("isOnlineMeeting")
         })
 
-    return {
-        "id":  graph_result.get("id"),
-        "subject":  graph_result.get("subject"),
-        "joinUrl":  online_meeting.get("joinUrl"),
-        "start":  graph_result.get("start"),
-        "end":  graph_result.get("end"),
-        "organizer": {
-            "name": organizer_email.get("name"),
-            "address": organizer_email.get("address")
-        },
-        "attendees": attendees,
-        "isOnlineMeeting": graph_result.get("isOnlineMeeting"),
-        "onlineMeetingProvider": graph_result.get("onlineMeetingProvider"),
-        "createdDateTime": graph_result.get("createdDateTime")
+    return events 
+
+
+def list_calendar_events_delegated(start_datetime: str, end_datetime: str) -> list[dict]: 
+    access_token = get_graph_delegated_access_token()
+
+    url = f"{settings.microsoft_graph_base_url}/me/calendarView"
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Prefer": f'outlook.timezone="{settings.timezone}"'
     }
+
+    params = {
+        "startDateTime": start_datetime,
+        "endDateTime": end_datetime,
+        "$orderby": "start/dateTime",
+        "$top": "50",
+        "$select": "id,subject,start,end,location,webLink,isOnlineMeeting,onlineMeeting,organizer"
+    }
+
+    response = requests.get(
+        url,
+        headers=headers,
+        params=params,
+        timeout=15
+    )
+
+    response.raise_for_status()
+
+    return normalize_calendar_event_response(response.json())

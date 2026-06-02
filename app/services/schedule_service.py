@@ -42,6 +42,22 @@ def validate_schedule_date(
                 intent=intent,
                 data=data
             )
+        
+        if intent == "calendar_query":
+         if not date_reference:
+             return AgentResult(
+                response="Informe o período da consulta. Exemplo: hoje ou amanhã.",
+                intent=intent,
+                data=data
+        )
+         
+         if intent == "calendar_delete":
+            if not date_reference:
+             return AgentResult(
+                response="Informe a data do compromisso que deseja cancelar. Exemplo: hoje ou amanhã.",
+                intent=intent,
+                data=data
+        )
 
     return None
 
@@ -183,3 +199,43 @@ def build_calendar_query_range(data: dict) -> dict: # transforma o pedido do usu
         "query_start_datetime": start_datetime.isoformat(),
         "query_end_datetime": end_datetime.isoformat()
     }
+
+def build_calendar_query_response(data: dict) -> str:
+    events = data.get("events") or []
+    events_count = data.get("events_count", 0)
+
+    if events_count == 0:
+        return "Não encontrei compromissos nesse período."
+
+    response = f"Encontrei {events_count} compromisso(s) nesse período:"
+
+    for event in events:
+        subject = event.get("subject") or "Sem título"
+
+        start = event.get("start") or {}
+        end = event.get("end") or {}
+
+        start_datetime = start.get("dateTime")
+        end_datetime = end.get("dateTime")
+
+        join_url = event.get("joinUrl")
+        web_link = event.get("webLink")
+
+        meeting_link = join_url or web_link
+
+        if start_datetime and end_datetime:
+            start_obj = datetime.fromisoformat(start_datetime)
+            end_obj = datetime.fromisoformat(end_datetime)
+
+            start_time_text = start_obj.strftime("%H:%M")
+            end_time_text = end_obj.strftime("%H:%M")
+
+            response += f"\n- {start_time_text} às {end_time_text} — {subject}"
+
+        else:
+            response += f"\n- {subject}"
+
+        if meeting_link:
+            response += f" --- [Link da reunião]({meeting_link})"
+
+    return response

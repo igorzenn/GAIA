@@ -19,6 +19,8 @@ def router_message(message: str) -> RouterResult:
     "crie reuniao",
     "criar evento",
     "crie evento",
+    "crie o evento",
+    "crie",
     "reservar horário",
     "reservar horario",
     "reserve horário",
@@ -49,13 +51,21 @@ def router_message(message: str) -> RouterResult:
     ]
 
     calendar_delete_keywords = [
+        "cancelar",
+        "cancele",
         "cancelar reunião",
         "cancelar reuniao",
+        "cancele a reunião",
+        "cancele a reuniao",
+        "cancelar evento",
+        "cancele o evento",
         "excluir reunião",
         "excluir reuniao",
+        "exclua reunião",
+        "exclua reuniao",
         "deletar evento",
+        "delete o evento",
         "remover da agenda",
-        "cancelar evento",
     ]
 
     exchange_rate_keywords = [
