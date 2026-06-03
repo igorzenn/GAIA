@@ -200,7 +200,7 @@ def build_calendar_query_range(data: dict) -> dict: # transforma o pedido do usu
         "query_end_datetime": end_datetime.isoformat()
     }
 
-def build_calendar_query_response(data: dict) -> str:
+def build_calendar_query_response(data: dict) -> str:  # função responsavel por montar a resposta de cancelamento
     events = data.get("events") or []
     events_count = data.get("events_count", 0)
 
@@ -237,5 +237,66 @@ def build_calendar_query_response(data: dict) -> str:
 
         if meeting_link:
             response += f" --- [Link da reunião]({meeting_link})"
+
+    return response
+
+def build_calendar_delete_candidate_response(data: dict) -> str:
+    events = data.get("events") or []
+    events_count = data.get("events_count", 0)
+
+    if events_count == 0:
+        return "Não encontrei compromisso compatível para cancelamento nesse período."
+
+    if events_count == 1:
+        event = events[0]
+        subject = event.get("subject") or "Sem título"
+
+        start = event.get("start") or {}
+        end = event.get("end") or {}
+
+        start_datetime = start.get("dateTime")
+        end_datetime = end.get("dateTime")
+
+        if start_datetime and end_datetime:
+            start_obj = datetime.fromisoformat(start_datetime)
+            end_obj = datetime.fromisoformat(end_datetime)
+
+            start_time_text = start_obj.strftime("%H:%M")
+            end_time_text = end_obj.strftime("%H:%M")
+
+            return (
+                f'Encontrei o compromisso "{subject}" '
+                f"das {start_time_text} às {end_time_text}. "
+                "Ainda não excluí o evento. A próxima etapa será adicionar confirmação antes de cancelar."
+            )
+
+        return (
+            f'Encontrei o compromisso "{subject}". '
+            "Ainda não excluí o evento. A próxima etapa será adicionar confirmação antes de cancelar."
+        )
+
+    response = f"Encontrei {events_count} compromissos compatíveis:"
+
+    for index, event in enumerate(events, start=1):
+        subject = event.get("subject") or "Sem título"
+
+        start = event.get("start") or {}
+        end = event.get("end") or {}
+
+        start_datetime = start.get("dateTime")
+        end_datetime = end.get("dateTime")
+
+        if start_datetime and end_datetime:
+            start_obj = datetime.fromisoformat(start_datetime)
+            end_obj = datetime.fromisoformat(end_datetime)
+
+            start_time_text = start_obj.strftime("%H:%M")
+            end_time_text = end_obj.strftime("%H:%M")
+
+            response += f"\n{index}. {start_time_text} às {end_time_text} — {subject}"
+        else:
+            response += f"\n{index}. {subject}"
+
+    response += "\n\nInforme qual deseja cancelar."
 
     return response
