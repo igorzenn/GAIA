@@ -22,22 +22,6 @@ def validate_event_payload(payload: dict) -> None:
         raise ValueError("Campo obrigatório ausente no payload: end.dateTime")
 
 
-def simulate_create_calendar_event(payload: dict) -> dict:
-    validate_event_payload(payload)
-
-    return {
-        "simulated": True,
-        "graph_url": f"{settings.microsoft_graph_base_url}/me/events",
-        "event": {
-            "id": "simulated-event-id",
-            "subject": payload.get("subject"),
-            "start": payload.get("start"),
-            "end": payload.get("end"),
-            "webLink": None
-        }
-    }
-
-
 def create_calendar_event_delegated(payload: dict) -> dict:
     validate_event_payload(payload)
 
@@ -120,3 +104,29 @@ def list_calendar_events_delegated(start_datetime: str, end_datetime: str) -> li
     response.raise_for_status()
 
     return normalize_calendar_event_response(response.json())
+
+def delete_calendar_event_delegated(event_id: str) -> dict:
+    if not event_id:
+        raise ValueError("ID do evento não informado para cancelamento")
+
+    access_token = get_graph_delegated_access_token()
+
+    url = f"{settings.microsoft_graph_base_url}/me/events/{event_id}"
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+
+    response = requests.delete(
+        url,
+        headers=headers,
+        timeout=15
+    )
+
+    response.raise_for_status()
+
+    return {
+        "deleted": True,
+        "event_id": event_id
+    }

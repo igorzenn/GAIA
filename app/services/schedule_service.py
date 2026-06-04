@@ -267,12 +267,12 @@ def build_calendar_delete_candidate_response(data: dict) -> str:
             return (
                 f'Encontrei o compromisso "{subject}" '
                 f"das {start_time_text} às {end_time_text}. "
-                "Ainda não excluí o evento. A próxima etapa será adicionar confirmação antes de cancelar."
+                "Confirma o cancelamento?."
             )
 
         return (
             f'Encontrei o compromisso "{subject}". '
-            "Ainda não excluí o evento. A próxima etapa será adicionar confirmação antes de cancelar."
+            "Confirma o cancelamento?"
         )
 
     response = f"Encontrei {events_count} compromissos compatíveis:"
@@ -300,3 +300,27 @@ def build_calendar_delete_candidate_response(data: dict) -> str:
     response += "\n\nInforme qual deseja cancelar."
 
     return response
+
+def normalize_calendar_delete_candidates(data: dict) -> dict:
+    events = data.get("events") or []
+
+    normalized_events = []
+
+    for event in events:
+        normalized_events.append({
+            "id": event.get("id"),
+            "subject": event.get("subject"),
+            "start": event.get("start"),
+            "end": event.get("end"),
+            "webLink": event.get("webLink"),
+            "joinUrl": event.get("joinUrl")
+        })
+
+    return {
+        "title": data.get("title"),
+        "date_reference": data.get("date_reference"),
+        "query_start_datetime": data.get("query_start_datetime"),
+        "query_end_datetime": data.get("query_end_datetime"),
+        "events_count": len(normalized_events),
+        "events": normalized_events
+    }

@@ -1,11 +1,13 @@
 from app.schemas import AgentResult
 from app.services.schedule_parser import parser_schedule_message
 from app.services.schedule_service import (validate_schedule_date, build_schedule_datetimes, build_calendar_event_payload, normalize_schedule_create_response, 
-                                           build_schedule_create_response, build_calendar_query_range, build_calendar_query_response, build_calendar_delete_candidate_response)
+                                           build_schedule_create_response, build_calendar_query_range, build_calendar_query_response, build_calendar_delete_candidate_response, 
+                                           normalize_calendar_delete_candidates)
 from app.services.graph_service import (create_calendar_event_delegated, list_calendar_events_delegated)
+from app.services.conversation_state import set_pending_action
 
 
-def handle_schedule(message: str, intent: str, access_token: str | None = None) -> AgentResult:
+def handle_schedule(message: str, intent: str, access_token: str, session_id: str | None = None) -> AgentResult:
     
     schedule_data = parser_schedule_message(message)
 
@@ -18,6 +20,7 @@ def handle_schedule(message: str, intent: str, access_token: str | None = None) 
         return validation_error      # Se faltar algo obrigatorio, pare o fluxo retorne uma resposta pedindo a informação faltante
     
     schedule_data = build_schedule_datetimes(schedule_data)
+
     if intent == "calendar_create":
         event_payload = build_calendar_event_payload(schedule_data)
         schedule_data["event_payload"] = event_payload
@@ -70,7 +73,22 @@ def handle_schedule(message: str, intent: str, access_token: str | None = None) 
         schedule_data["events"] = matching_events
         schedule_data["events_count"] = len(matching_events)
 
+        if len(matching_events) == 1:
+            event = matching_events[0]
+
+            set_pending_action(
+                session_id=session_id,
+                state={
+                    "pending_action": "confirm_calendar_delete",
+                    "event_id": event.get("id"),
+                    "event_subject": event.get("subject"),
+                    "event_start": event.get("start"),
+                    "event_end": event.get("end")
+                }
+            )
+
         response = build_calendar_delete_candidate_response(schedule_data)
+        schedule_data = normalize_calendar_delete_candidates(schedule_data)
 
     return AgentResult(
         response=response,
