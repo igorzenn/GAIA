@@ -51,13 +51,22 @@ def validate_schedule_date(
                 data=data
         )
          
-         if intent == "calendar_delete":
+        if intent == "calendar_delete":
             if not date_reference:
              return AgentResult(
                 response="Informe a data do compromisso que deseja cancelar. Exemplo: hoje ou amanhã.",
                 intent=intent,
                 data=data
         )
+            
+        if intent == "calendar_update":
+            if not date_reference:
+                return AgentResult(
+                    response="Informe a data do compromisso que deseja alterar. Exemplo: hoje ou amanhã.",
+                    intent=intent,
+                    data=data
+        )
+
 
     return None
 
@@ -323,4 +332,107 @@ def normalize_calendar_delete_candidates(data: dict) -> dict:
         "query_end_datetime": data.get("query_end_datetime"),
         "events_count": len(normalized_events),
         "events": normalized_events
+    }
+
+def build_calendar_update_candidate_response(data: dict) -> str: # Cria resposta para candidato de alteração
+    events = data.get("events") or []
+    events_count = data.get("events_count", 0)
+
+    if events_count == 0:
+        return "Não encontrei compromisso compatível para alteração nesse período."
+
+    if events_count == 1:
+        event = events[0]
+        subject = event.get("subject") or "Sem título"
+
+        start = event.get("start") or {}
+        end = event.get("end") or {}
+
+        start_datetime = start.get("dateTime")
+        end_datetime = end.get("dateTime")
+
+        if start_datetime and end_datetime:
+            start_obj = datetime.fromisoformat(start_datetime)
+            end_obj = datetime.fromisoformat(end_datetime)
+
+            start_time_text = start_obj.strftime("%H:%M")
+            end_time_text = end_obj.strftime("%H:%M")
+
+            return (
+                f'Encontrei o compromisso "{subject}" '
+                f"das {start_time_text} às {end_time_text}. "
+                "O que deseja alterar? Você pode informar um novo horário, por exemplo: mudar para 10h às 11h."
+            )
+
+        return (
+            f'Encontrei o compromisso "{subject}". '
+            "O que deseja alterar? Você pode informar um novo horário, por exemplo: mudar para 10h às 11h."
+        )
+
+    response = f"Encontrei {events_count} compromissos compatíveis:"
+
+    for index, event in enumerate(events, start=1):
+        subject = event.get("subject") or "Sem título"
+
+        start = event.get("start") or {}
+        end = event.get("end") or {}
+
+        start_datetime = start.get("dateTime")
+        end_datetime = end.get("dateTime")
+
+        if start_datetime and end_datetime:
+            start_obj = datetime.fromisoformat(start_datetime)
+            end_obj = datetime.fromisoformat(end_datetime)
+
+            start_time_text = start_obj.strftime("%H:%M")
+            end_time_text = end_obj.strftime("%H:%M")
+
+            response += f"\n{index}. {start_time_text} às {end_time_text} — {subject}"
+        else:
+            response += f"\n{index}. {subject}"
+
+    response += "\n\nInforme qual deseja alterar."
+
+    return response
+
+def normalize_calendar_update_candidates(data: dict) -> dict: # Normalização dos candidatos de alteração
+    events = data.get("events") or []
+
+    normalized_events = []
+
+    for event in events:
+        normalized_events.append({
+            "id": event.get("id"),
+            "subject": event.get("subject"),
+            "start": event.get("start"),
+            "end": event.get("end"),
+            "webLink": event.get("webLink"),
+            "joinUrl": event.get("joinUrl")
+        })
+
+    return {
+        "title": data.get("title"),
+        "date_reference": data.get("date_reference"),
+        "query_start_datetime": data.get("query_start_datetime"),
+        "query_end_datetime": data.get("query_end_datetime"),
+        "events_count": len(normalized_events),
+        "events": normalized_events
+    }
+
+def build_calendar_update_payload(data: dict) -> dict:
+    start_datetime = data.get("new_start_datetime")
+    end_datetime = data.get("new_end_datetime")
+
+    if not start_datetime or not end_datetime:
+        raise ValueError("Novas datas de início e fim são obrigatórias para alteração")
+
+    return {
+        "start": {
+            "dateTime": start_datetime,
+            "timeZone": settings.timezone
+        },
+        "end": {
+            "dateTime": end_datetime,
+            "timeZone": settings.timezone
+        }
     }

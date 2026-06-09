@@ -130,3 +130,28 @@ def delete_calendar_event_delegated(event_id: str) -> dict:
         "deleted": True,
         "event_id": event_id
     }
+
+def update_calendar_event_delegated(event_id: str, payload: dict) -> dict: # função de update
+    if not event_id:
+        raise ValueError("ID do evento não informado para alteração")
+
+    access_token = get_graph_delegated_access_token()
+
+    url = f"{settings.microsoft_graph_base_url}/me/events/{event_id}"
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+        "Prefer": f'outlook.timezone="{settings.timezone}"'
+    }
+
+    response = requests.patch(
+        url,
+        headers=headers,
+        json=payload,
+        timeout=15
+    )
+
+    response.raise_for_status()
+
+    return normalize_calendar_event_response(response.json())

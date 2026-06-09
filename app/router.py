@@ -43,6 +43,9 @@ def router_message(message: str) -> RouterResult:
     calendar_update_keywords = [
         "alterar reunião",
         "alterar reuniao",
+        "altere",
+        "troque",
+        "mude",
         "reagendar",
         "remarcar",
         "mudar horário",
