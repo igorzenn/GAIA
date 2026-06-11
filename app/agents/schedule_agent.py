@@ -49,8 +49,8 @@ def handle_schedule(message: str, intent: str, access_token: str, session_id: st
         schedule_data = build_calendar_query_range(schedule_data)
 
         events = list_calendar_events_delegated(
-        start_datetime=schedule_data["query_start_datetime"],
-        end_datetime=schedule_data["query_end_datetime"]
+            start_datetime=schedule_data["query_start_datetime"],
+            end_datetime=schedule_data["query_end_datetime"]
         )
 
         title = schedule_data.get("title")

@@ -56,3 +56,35 @@ def parser_schedule_message(message: str) -> dict:
         "end_hour": end_hour,
         "date_reference": date_reference
     }
+
+def parser_schedule_update_message(message: str) -> dict:
+    message_lower = message.lower().strip()
+
+    new_title = None
+
+    title_patterns = [
+        r"t[ií]tulo para (.+)",
+        r"nome para (.+)",
+        r"chamar de (.+)",
+        r"renomear para (.+)",
+        r"mudar o t[ií]tulo para (.+)",
+        r"alterar o t[ií]tulo para (.+)",
+        r"trocar o t[ií]tulo para (.+)"
+    ]
+
+    for pattern in title_patterns:
+        match = re.search(pattern, message_lower, re.IGNORECASE)
+
+        if match:
+            new_title = match.group(1).strip()
+            break
+
+    start_hour, end_hour = extract_hours(message)
+    date_reference = extract_date_reference(message)
+
+    return {
+        "new_title": new_title,
+        "new_date_reference": date_reference,
+        "new_start_hour": start_hour,
+        "new_end_hour": end_hour
+    }

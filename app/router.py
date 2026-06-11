@@ -46,6 +46,7 @@ def router_message(message: str) -> RouterResult:
         "altere",
         "troque",
         "mude",
+        "mudar",
         "reagendar",
         "remarcar",
         "mudar horário",

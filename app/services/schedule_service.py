@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from zoneinfo import ZoneInfo
 
 from app.config import settings
@@ -420,19 +420,113 @@ def normalize_calendar_update_candidates(data: dict) -> dict: # Normalização d
     }
 
 def build_calendar_update_payload(data: dict) -> dict:
+    payload = {}
+
+    new_title = data.get("new_title")
     start_datetime = data.get("new_start_datetime")
     end_datetime = data.get("new_end_datetime")
 
-    if not start_datetime or not end_datetime:
-        raise ValueError("Novas datas de início e fim são obrigatórias para alteração")
+    if new_title:
+        payload["subject"] = new_title
 
-    return {
-        "start": {
+    if start_datetime and end_datetime:
+        payload["start"] = {
             "dateTime": start_datetime,
             "timeZone": settings.timezone
-        },
-        "end": {
+        }
+
+        payload["end"] = {
             "dateTime": end_datetime,
             "timeZone": settings.timezone
         }
+
+    if not payload:
+        raise ValueError("Nenhuma alteração válida foi informada")
+
+    return payload
+
+def parse_hour_value(hour_value: str) -> tuple[int, int]:
+    if not hour_value:
+        raise ValueError("Horário não informado")
+
+    hour_text = hour_value.lower().strip()
+
+    if "h" in hour_text:
+        parts = hour_text.split("h")
+
+        hour = int(parts[0])
+
+        minute = 0
+
+        if len(parts) > 1 and parts[1]:
+            minute = int(parts[1])
+
+        return hour, minute
+
+    if ":" in hour_text:
+        hour, minute = hour_text.split(":", 1)
+
+        return int(hour), int(minute)
+
+    return int(hour_text), 0
+
+def build_calendar_update_datetime_data(pending_action: dict, update_changes: dict) -> dict:
+    event_start = pending_action.get("event_start") or {}
+    event_end = pending_action.get("event_end") or {}
+
+    original_start_datetime = event_start.get("dateTime")
+    original_end_datetime = event_end.get("dateTime")
+
+    if not original_start_datetime or not original_end_datetime:
+        raise ValueError("Datas originais do evento não encontradas para alteração")
+
+    original_start = datetime.fromisoformat(original_start_datetime)
+    original_end = datetime.fromisoformat(original_end_datetime)
+
+    new_date_reference = update_changes.get("new_date_reference")
+    new_start_hour = update_changes.get("new_start_hour")
+    new_end_hour = update_changes.get("new_end_hour")
+
+    if new_date_reference:
+        date_data = {
+            "date_reference": new_date_reference,
+            "start_hour": new_start_hour or original_start.strftime("%Hh"),
+            "end_hour": new_end_hour or original_end.strftime("%Hh")
+        }
+
+        datetime_data = build_schedule_datetimes(date_data)
+
+        return {
+            "new_start_datetime": datetime_data["start_datetime"],
+            "new_end_datetime": datetime_data["end_datetime"]
+        }
+
+    start_hour = new_start_hour or original_start.strftime("%Hh")
+    end_hour = new_end_hour or original_end.strftime("%Hh")
+
+    start_hour_number, start_minute_number = parse_hour_value(start_hour)
+    end_hour_number, end_minute_number = parse_hour_value(end_hour)
+
+    timezone = ZoneInfo(settings.timezone)
+
+    new_start = original_start.replace(
+        hour=start_hour_number,
+        minute=start_minute_number,
+        second=0,
+        microsecond=0,
+        tzinfo=timezone
+    )
+
+    new_end = original_end.replace(
+        hour=end_hour_number,
+        minute=end_minute_number,
+        second=0,
+        microsecond=0,
+        tzinfo=timezone
+    )
+
+    return {
+        "new_start_datetime": new_start.isoformat(),
+        "new_end_datetime": new_end.isoformat()
     }
+
